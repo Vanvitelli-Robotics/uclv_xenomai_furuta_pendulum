@@ -1,0 +1,8 @@
+# goal
+# mode=0 error,mode=1 position,mode=2 velocity
+int32 mode
+---
+
+# result
+
+bool success

@@ -1,0 +1,8 @@
+# goal
+# bool data
+float32[] qf
+---
+
+# result
+
+bool completed

@@ -1,0 +1,8 @@
+# goal
+# data=0 disattiva l'ascolto sul topic,data=1 attiva ascolto sul topic
+bool data
+---
+
+# result
+
+bool success
