@@ -622,7 +622,7 @@ void spin_cb(void *arg)
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
-    node = rclcpp::Node::make_shared("controller_node");
+    node = rclcpp::Node::make_shared("driver_node");
 
     joint_pub = node->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1);
     joint_service = node->create_service<xenopkg_interfaces::srv::JointSrv>("joint_position_srv", &service_cb);

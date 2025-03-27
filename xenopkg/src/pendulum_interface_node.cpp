@@ -6,6 +6,9 @@
 #include <QScreen>
 #include <QTextEdit>
 #include <QThread>
+#include <QTimer>
+#include <QProcess>
+#include <QGroupBox>
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 #include <xenopkg_interfaces/srv/joint_srv.hpp>
@@ -25,7 +28,7 @@ std::shared_ptr<rclcpp::Client<std_srvs::srv::SetBool>> setswingup;
 std::shared_ptr<rclcpp::Client<xenopkg_interfaces::srv::SetMode>> setmode;
 std::shared_ptr<rclcpp::Client<xenopkg_interfaces::srv::JointSrv>> movejoint;
 QTextEdit *logTextEdit;
-
+QProcess *process = new QProcess();
 void topic_callback(const xenopkg_interfaces::msg::Float32Header::SharedPtr message)
 {
   theta = message->data[0];
@@ -397,6 +400,19 @@ void stopcb()
   RCLCPP_INFO_STREAM(node->get_logger(), " end ");
 }
 
+
+void start_driver() {
+ 
+    system("gnome-terminal -- sudo -E -S ~/prova_xenomai_ws/run_driver.sh");
+  
+}
+void start_network() {
+ 
+    system("gnome-terminal -- ros2 launch xenopkg kalmancontroller.launch.py");
+ 
+}
+
+
 int main(int argc, char **argv)
 {
 
@@ -414,47 +430,94 @@ int main(int argc, char **argv)
   QApplication app(argc, argv);
 
   // Creazione della finestra principale
-  QWidget window;
-  window.setWindowTitle("Controllo del Pendolo");
-  window.setStyleSheet("background-color: #f0f0f0;");
-  window.resize(600, 400);
+QWidget window;
+window.setWindowTitle("Controllo del Pendolo");
+window.setStyleSheet("background-color: #f0f0f0;");
+window.resize(600, 400);
 
-  // Layout
-  QVBoxLayout layout(&window);
-  layout.setAlignment(Qt::AlignTop);
-  layout.setSpacing(30);
+// Layout principale
+QVBoxLayout layout(&window);
+layout.setAlignment(Qt::AlignTop);
+layout.setSpacing(20);
+layout.setContentsMargins(20, 20, 20, 20);
 
-  // Etichetta di titolo
-  QLabel label("Furuta Pendulum", &window);
-  QFont font("Arial", 24, QFont::Bold);
-  label.setFont(font);
-  label.setAlignment(Qt::AlignCenter);
-  layout.addWidget(&label);
+// Etichetta di titolo
+// QLabel label("Furuta Pendulum", &window);
+// QFont font("Arial", 24, QFont::Bold);
+// label.setFont(font);
+// label.setAlignment(Qt::AlignCenter);
+// layout.addWidget(&label);
 
-  // Pulsante per avviare le operazioni
-  QPushButton startButton("Start", &window);
-  startButton.setStyleSheet("background-color: #4CAF50; color: white; font-size: 18px; padding: 10px;");
-  startButton.setIcon(QIcon::fromTheme("system-run"));
-  startButton.setIconSize(QSize(24, 24));
-  layout.addWidget(&startButton);
+// Sezione Driver
+QGroupBox driverGroup("Driver MECA", &window);
+QVBoxLayout driverLayout;
+QLabel startDriverDesc("1) Avvia il driver MECA per il controllo del pendolo.");
+startDriverDesc.setStyleSheet("color: #555;");
+driverLayout.addWidget(&startDriverDesc);
 
-  // Pulsante per fermare tutte le operazioni
-  QPushButton stopButton("Stop", &window);
-  stopButton.setStyleSheet("background-color: #f44336; color: white; font-size: 18px; padding: 10px;");
-  stopButton.setIcon(QIcon::fromTheme("process-stop"));
-  stopButton.setIconSize(QSize(24, 24));
-  layout.addWidget(&stopButton);
+QPushButton startDriverButton("Start MECA Driver");
+startDriverButton.setStyleSheet("background-color: #4CAF50; color: white; font-size: 18px; padding: 10px;");
+driverLayout.addWidget(&startDriverButton);
+driverGroup.setLayout(&driverLayout);
+layout.addWidget(&driverGroup);
 
-  // Pulsante per attivare lo swing up
-  QPushButton swingUpOnButton("Swing Up ON", &window);
-  swingUpOnButton.setStyleSheet("background-color: #008CBA; color: white; font-size: 18px; padding: 10px;");
-  layout.addWidget(&swingUpOnButton);
+// Sezione Rete ROS2
+QGroupBox networkGroup("Rete ROS2", &window);
+QVBoxLayout networkLayout;
+QLabel startNetworkDesc("2) Avvia la rete ROS2 per la comunicazione tra i nodi.");
+startNetworkDesc.setStyleSheet("color: #555;");
+networkLayout.addWidget(&startNetworkDesc);
 
-  // Pulsante per disattivare lo swing up
-  QPushButton swingUpOffButton("Swing Up OFF", &window);
-  swingUpOffButton.setStyleSheet("background-color: #f44336; color: white; font-size: 18px; padding: 10px;");
-  layout.addWidget(&swingUpOffButton);
+QPushButton startNetwork("Start ROS2 Network");
+startNetwork.setStyleSheet("background-color: #008CBA; color: white; font-size: 18px; padding: 10px;");
+networkLayout.addWidget(&startNetwork);
+networkGroup.setLayout(&networkLayout);
+layout.addWidget(&networkGroup);
 
+// Sezione Pendolo
+QGroupBox pendulumGroup("Pendolo", &window);
+QVBoxLayout pendulumLayout;
+
+QLabel startPendulumDesc("3) Avvia il pendolo.");
+startPendulumDesc.setStyleSheet("color: #555;");
+pendulumLayout.addWidget(&startPendulumDesc);
+QPushButton startButton("Start Pendulum");
+startButton.setStyleSheet("background-color: #4CAF50; color: white; font-size: 18px; padding: 10px;");
+startButton.setIcon(QIcon::fromTheme("system-run"));
+startButton.setIconSize(QSize(24, 24));
+pendulumLayout.addWidget(&startButton);
+
+QLabel stopPendulumDesc("Ferma il pendolo.");
+stopPendulumDesc.setStyleSheet("color: #555;");
+pendulumLayout.addWidget(&stopPendulumDesc);
+QPushButton stopButton("Stop Pendulum");
+stopButton.setStyleSheet("background-color: #f44336; color: white; font-size: 18px; padding: 10px;");
+stopButton.setIcon(QIcon::fromTheme("process-stop"));
+stopButton.setIconSize(QSize(24, 24));
+pendulumLayout.addWidget(&stopButton);
+pendulumGroup.setLayout(&pendulumLayout);
+layout.addWidget(&pendulumGroup);
+
+// Sezione Swing Up
+QGroupBox swingGroup("Modalità Swing Up", &window);
+QVBoxLayout swingLayout;
+QLabel swingUpOnDesc("Attiva la modalità Swing Up.");
+swingUpOnDesc.setStyleSheet("color: #555;");
+swingLayout.addWidget(&swingUpOnDesc);
+QPushButton swingUpOnButton("Swing Up ON");
+swingUpOnButton.setStyleSheet("background-color: #008CBA; color: white; font-size: 18px; padding: 10px;");
+swingLayout.addWidget(&swingUpOnButton);
+
+QLabel swingUpOffDesc("Disattiva la modalità Swing Up.");
+swingUpOffDesc.setStyleSheet("color: #555;");
+swingLayout.addWidget(&swingUpOffDesc);
+QPushButton swingUpOffButton("Swing Up OFF");
+swingUpOffButton.setStyleSheet("background-color: #f44336; color: white; font-size: 18px; padding: 10px;");
+swingLayout.addWidget(&swingUpOffButton);
+swingGroup.setLayout(&swingLayout);
+layout.addWidget(&swingGroup);
+
+    
   // logTextEdit = new QTextEdit(&window);
   // logTextEdit->setReadOnly(true);
   // logTextEdit->setStyleSheet("background-color: #e8e8e8; font-size: 14px;");
@@ -468,6 +531,11 @@ int main(int argc, char **argv)
 
   QObject::connect(&swingUpOnButton, &QPushButton::clicked, swing_up_on);
   QObject::connect(&swingUpOffButton, &QPushButton::clicked, swing_up_off);
+  
+  QObject::connect(&startDriverButton, &QPushButton::clicked, start_driver);
+
+  QObject::connect(&startNetwork, &QPushButton::clicked, start_network);
+
 
   // Assegna il layout alla finestra principale
   window.setLayout(&layout);
@@ -476,7 +544,7 @@ int main(int argc, char **argv)
   // Ciclo dell'applicazione Qt
   int result = app.exec();
   delete logTextEdit;
-
+  delete process;
   // Shutdown di ROS2 prima di uscire
   rclcpp::shutdown();
 
